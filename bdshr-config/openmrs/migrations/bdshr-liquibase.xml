@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="JSS-201405141259" author="mihir/shruthi">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM concept_name where name in ('Diagnosis Set of Sets')
+            </sqlCheck>
+        </preConditions>
+        <comment>Add diagnosis set of sets concept</comment>
+        <sql>
+            set @concept_id = 0;
+            set @concept_name_short_id = 0;
+            set @concept_name_full_id = 0;
+
+            call add_concept(@concept_id, @concept_name_short_id, @concept_name_full_id, 'Diagnosis Set of Sets', 'Diagnosis Set of Sets', 'N/A', 'ConvSet', true);
+        </sql>
+    </changeSet>
+    <changeSet id="JSS-201405141113" author="mihir/shruthi">
+        <validCheckSum>3:fdb31c1d95d7168afa2359f24afc1682</validCheckSum>
+        <validCheckSum>3:0e435346d02030b84e72e1b04748231c</validCheckSum>
+        <comment>set emr.concept.diagnosisSetOfSets global property</comment>
+        <sql>
+            set @concept_uuid = 0;
+            select distinct c.uuid from concept c inner join concept_name cn on c.concept_id = cn.concept_id where name in ('Diagnosis Set of Sets') into @concept_uuid;
+
+            select uuid() into @concept_uuid;
+            INSERT INTO global_property (`property`, `property_value`, `description`, `uuid`)
+            VALUES ('emr.concept.diagnosisSetOfSets', @concept_uuid, 'Diagnosis Set of Sets', @concept_uuid)
+            ON DUPLICATE KEY UPDATE property_value = @concept_uuid;
+        </sql>
+    </changeSet>
+    <changeSet id="JSS-201406261644" author="arathy/mujir">
+        <comment>fixing migration id 'JSS-201405141113'</comment>
+        <sql>
+            set @concept_uuid = 0;
+            select distinct c.uuid from concept c inner join concept_name cn on c.concept_id = cn.concept_id where name in ('Diagnosis Set of Sets') into @concept_uuid;
+
+            INSERT INTO global_property (`property`, `property_value`, `description`, `uuid`)
+            VALUES ('emr.concept.diagnosisSetOfSets', @concept_uuid, 'Diagnosis Set of Sets', uuid())
+            ON DUPLICATE KEY UPDATE property_value = @concept_uuid;
+        </sql>
+    </changeSet>
+    <changeSet id="BD-201411271111" author="tw" context="rel2">
+        <comment>rel2</comment>
+        <sqlFile path="BDAddressHierarchy.sql"/>
+    </changeSet>
+    <changeSet id="BD-201411271042" author="neha" context="setup">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM address_hierarchy_level;
+            </sqlCheck>
+        </preConditions>
+        <comment>Setting address hierarchy levels</comment>
+        <sql>
+            set @parent_concept_id = 0;
+
+            INSERT INTO address_hierarchy_level (name, parent_level_id, address_field, uuid, required) VALUES ('Division', NULL, 'STATE_PROVINCE', uuid(), 1);
+
+            select address_hierarchy_level_id from address_hierarchy_level where name = 'Division' into @parent_concept_id;
+            INSERT INTO address_hierarchy_level (name, parent_level_id, address_field, uuid, required) VALUES ('Zilla', @parent_concept_id, 'COUNTY_DISTRICT', uuid(), 1);
+
+            select address_hierarchy_level_id from address_hierarchy_level where name = 'Zilla' into @parent_concept_id;
+            INSERT INTO address_hierarchy_level (name, parent_level_id, address_field, uuid, required) VALUES ('Upazilla', @parent_concept_id, 'ADDRESS_5', uuid(), 1);
+
+            select address_hierarchy_level_id from address_hierarchy_level where name = 'Upazilla' into @parent_concept_id;
+            INSERT INTO address_hierarchy_level (name, parent_level_id, address_field, uuid, required) VALUES ('Paurasava', @parent_concept_id, 'ADDRESS_4', uuid(), 0);
+
+            select address_hierarchy_level_id from address_hierarchy_level where name = 'Paurasava' into @parent_concept_id;
+            INSERT INTO address_hierarchy_level (name, parent_level_id, address_field, uuid, required) VALUES ('Ward/Union', @parent_concept_id, 'ADDRESS_3', uuid(), 0);
+
+            select address_hierarchy_level_id from address_hierarchy_level where name = 'Ward/Union' into @parent_concept_id;
+            INSERT INTO address_hierarchy_level (name, parent_level_id, address_field, uuid, required) VALUES ('Rural Ward', @parent_concept_id, 'ADDRESS_2', uuid(), 0);
+
+            select address_hierarchy_level_id from address_hierarchy_level where name = 'Rural Ward' into @parent_concept_id;
+            INSERT INTO address_hierarchy_level (name, parent_level_id, address_field, uuid, required) VALUES ('Address Line', @parent_concept_id, 'ADDRESS_1' ,uuid(), 1);
+        </sql>
+    </changeSet>
+    <changeSet id="BD-201412031437" author="neha" context="setup">
+        <comment>Adding Chief Complaint Answers concept</comment>
+        <sql>
+            set @concept_id = 0;
+            set @concept_name_short_id = 0;
+            set @concept_name_full_id = 0;
+
+            call add_concept(@concept_id, @concept_name_short_id, @concept_name_full_id, 'Chief Complaint Answers', 'Chief Complaint Answers', 'Coded', 'Misc', false);
+        </sql>
+    </changeSet>
+    <changeSet id="BD-20150216-1611" author="neha" context="setup">
+        <comment>Creating provider attribute for Organization</comment>
+        <insert tableName="provider_attribute_type">
+            <column name="name" value="Organization"/>
+            <column name="description" value="Organization"/>
+            <column name="datatype" value="org.openmrs.customdatatype.datatype.FreeTextDatatype"/>
+            <column name="min_occurs" value="0"/>
+            <column name="creator" value="1"/>
+            <column name="date_created" valueDate="now()"/>
+            <column name="retired" value="0"/>
+            <column name="uuid" valueComputed="uuid()"/>
+        </insert>
+    </changeSet>
+    <changeSet id="BD-20150415-2100" author="Angshu" context="setup">
+        <comment>Change address_hierarchy entry.user_generated_id column size to 12 from default 11.</comment>
+        <modifyDataType tableName="address_hierarchy_entry" columnName="user_generated_id" newDataType="varchar(12)" />
+    </changeSet>
+    <changeSet id="BD-20150511-1031" author="Hemanth" context="rel3">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM scheduler_task_config where schedulable_class = 'org.openmrs.module.atomfeed.scheduler.tasks.EventRecordsNumberOffsetMarkerTask'
+            </sqlCheck>
+        </preConditions>
+        <comment>Adding event record number offset marker task</comment>
+        <sql>
+            INSERT INTO  scheduler_task_config  (name, description, schedulable_class,
+            start_time, start_time_pattern, repeat_interval, start_on_startup, started,
+            created_by, date_created, changed_by, date_changed, last_execution_time, uuid )
+            VALUES ('OpenMRS event offset marker task', NULL, 'org.openmrs.module.atomfeed.scheduler.tasks.EventRecordsNumberOffsetMarkerTask',
+            '2015-05-11 00:00:00','MM/dd/yyyy HH:mm:ss',86400, 1, 1,
+            1, now(), NULL, NULL, NULL, uuid());
+        </sql>
+    </changeSet>
+    <changeSet id="BD-20150625-1631" author="neha,angshu">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from chunking_history;
+            </sqlCheck>
+        </preConditions>
+        <insert tableName="chunking_history">
+            <column name="chunk_length" value="100"/>
+            <column name="start" value="1"/>
+        </insert>
+    </changeSet>
+    <changeSet id="BD-20151203-2202" author="neha">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                select count(*) from order_frequency o join concept_name cn on o.concept_id = cn.concept_id where name = 'Immediately' and concept_name_type = 'FULLY_SPECIFIED';
+            </sqlCheck>
+        </preConditions>
+        <sql>
+            set @concept_id = 0;
+            select concept_id into  @concept_id from concept_name where name = 'Immediately' and concept_name_type = 'FULLY_SPECIFIED';
+            update order_frequency set retired = 1, date_retired=now(), retire_reason='Not an order frequency' where concept_id = @concept_id;
+        </sql>
+    </changeSet>
+    <changeSet id="20160114-2114" author="angshu" context="setup">
+        <comment>active patients list in clinical module</comment>
+        <sqlFile path="ActivePatientsForCC.sql"/>
+    </changeSet>
+    <changeSet id='201603081440' author='Neha,Sukreet' context='setup'>
+        <comment>Increasing the person attribute value size to 150</comment>
+        <sql>
+            ALTER TABLE person_attribute MODIFY COLUMN value varchar(150);
+        </sql>
+    </changeSet>
+    <changeSet id='BD-201612021229' author='Neha,Sukreet' context='setup'>
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM location WHERE name = 'BahmniFacility';
+            </sqlCheck>
+        </preConditions>
+        <comment>delete loation BahmniFacility. Split from changeset BD-201406241630</comment>
+        <sql>
+            DELETE FROM location WHERE name = 'BahmniFacility';
+        </sql>
+    </changeSet>
+    <changeSet id='BD-201612021240' author='Neha,Sukreet' context='setup'>
+        <comment>Update Local Name to Bengali. Split from changeset BD-201406241630</comment>
+        <sql>
+            UPDATE person_attribute_type SET description="পদবি" WHERE name = 'familyNameLocal';
+            UPDATE person_attribute_type SET description="রোগীর নাম" WHERE name = 'givenNameLocal';
+        </sql>
+    </changeSet>
+    <changeSet id='BD-201612021402' author='Neha,Sukreet' context='setup'>
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM idgen_identifier_source WHERE name = 'BDH';
+            </sqlCheck>
+        </preConditions>
+        <comment>Inserting BDH identifier. Split from changeset BD-201406241630</comment>
+        <sql>
+            SELECT patient_identifier_type_id from patient_identifier_type where name = 'Patient Identifier' into @patient_identifier;
+            INSERT INTO idgen_identifier_source (uuid, name, description, identifier_type, creator, date_created) VALUES (uuid(), 'BDH', 'ID sequence source for patients in Bangladesh for this facility', @patient_identifier, 1, curdate());
+            SET @source_id := LAST_INSERT_ID();
+            INSERT INTO idgen_seq_id_gen (id, next_sequence_value, base_character_set, first_identifier_base, prefix, suffix, min_length, max_length) VALUES (@source_id, 200000, '0123456789', '200000', 'BDH', '', 9,9);
+        </sql>
+    </changeSet>
+</databaseChangeLog>

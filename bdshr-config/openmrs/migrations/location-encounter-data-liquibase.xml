@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="BD-LOCATION-20150428-1246" author="Neha" context="setup">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM encounter_type where name = 'Field';
+            </sqlCheck>
+        </preConditions>
+        <comment>Setting Location for field</comment>
+        <sql>
+            INSERT INTO encounter_type(name, description, creator, date_created, retired, uuid)
+            VALUES('FIELD', 'Field encounter', 1, now(), 0, uuid());
+        </sql>
+    </changeSet>
+    <changeSet id="BD-LOCATION-20150618-1341" author="neha">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM location where name = 'Registration';
+            </sqlCheck>
+        </preConditions>
+        <comment>Retire location type Registration</comment>
+        <update tableName="location">
+            <column name="retired" value="1"/>
+            <column name="retired_by" value="1"/>
+            <column name="date_retired" valueComputed="now()"/>
+            <column name="retire_reason" value="Not needed for this config."/>
+            <where>name = 'Registration'</where>
+        </update>
+    </changeSet>
+    <changeSet id="BD-LOCATION-20150618-1342" author="neha">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM location where name = 'OPD';
+            </sqlCheck>
+        </preConditions>
+        <comment>Retire location type OPD</comment>
+        <update tableName="location">
+            <column name="retired" value="1"/>
+            <column name="retired_by" value="1"/>
+            <column name="date_retired" valueComputed="now()"/>
+            <column name="retire_reason" value="Not needed for this config."/>
+            <where>name = 'OPD'</where>
+        </update>
+    </changeSet>
+    <changeSet id="BD-LOCATION-20150618-1343" author="neha">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM location where name = 'Discharge';
+            </sqlCheck>
+        </preConditions>
+        <comment>Retire location type Discharge</comment>
+        <update tableName="location">
+            <column name="retired" value="1"/>
+            <column name="retired_by" value="1"/>
+            <column name="date_retired" valueComputed="now()"/>
+            <column name="retire_reason" value="Not needed for this config."/>
+            <where>name = 'Discharge'</where>
+        </update>
+    </changeSet>
+    <changeSet id="BD-LOCATION-20150618-1344" author="neha">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM location where name = 'Field';
+            </sqlCheck>
+        </preConditions>
+        <comment>Retire location type Field</comment>
+        <update tableName="location">
+            <column name="retired" value="1"/>
+            <column name="retired_by" value="1"/>
+            <column name="date_retired" valueComputed="now()"/>
+            <column name="retire_reason" value="Not needed for this config."/>
+            <where>name = 'Field'</where>
+        </update>
+    </changeSet>
+    <changeSet id="BD-LOCATION-20151105-1419" author="sanjana">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*) FROM global_property where property='bahmni.encounterType.default';
+            </sqlCheck>
+        </preConditions>
+        <comment>Setting default encounter type to Field for CHW</comment>
+        <update tableName="global_property">
+            <column name="property_value" value="Field"/>
+            <where>property='bahmni.encounterType.default'</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>
